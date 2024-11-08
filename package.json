@@ -16,7 +16,6 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "mongoose": "^8.7.2",
-    "nodejs-polars": "^0.16.0",
     "openai": "^4.71.1"
   },
   "devDependencies": {

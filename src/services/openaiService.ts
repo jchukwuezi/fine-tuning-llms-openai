@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
 import csvParser from "csv-parser";
+import { Readable } from "stream";
 
 dotenv.config({ path: path.resolve(__dirname, "../config/config.env") });
 
@@ -222,4 +223,54 @@ const splitData = (
   } catch (error) {
     console.error("Error during fine tuning ", error);
   }
+})();
+
+
+//funvtion to visualise the training and validation loss from the metrics file
+const retrieveMetrics = async (fileId: string): Promise<any[]> => {
+  const response = await openai.files.content(fileId);
+
+  const readableStream = response.body as unknown as Readable;
+
+  return new Promise((resolve, reject) => {
+    const results: any[] = [];
+
+    // Use csv-parser to parse the content
+    readableStream
+      .pipe(csvParser())
+      .on("data", (row) => results.push(row))
+      .on("end", () => resolve(results))
+      .on("error", (error) => reject(error));
+  });
+};
+
+const chatWithFineTunedModel = async (userRequest: string) => {
+  const fineTuneJob = await openai.fineTuning.jobs.retrieve(
+    process.env.FINE_TUNE_JOB_ID as string
+  );
+
+  try {
+    if (!fineTuneJob.fine_tuned_model) {
+      throw new Error(
+        "Fine-tuned model not found. Ensure the fine-tuning job is complete."
+      );
+    }
+
+    const response = await openai.chat.completions.create({
+      model: fineTuneJob.fine_tuned_model,
+      messages: [{ role: "user", content: userRequest }],
+    });
+
+    const chatResponse = response.choices[0].message.content;
+    return chatResponse;
+  } catch (error) {
+    console.error(`Error with open ai`, error);
+  }
+};
+
+(async () => {
+  const userRequest =
+    "please provide a summary of the stock data for the HDFC Bank on January 1, 2016";
+  const response = await chatWithFineTunedModel(userRequest);
+  console.log(response);
 })();
