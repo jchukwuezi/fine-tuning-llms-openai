@@ -6,8 +6,9 @@ import { connectDB } from "./config/db";
 
 dotenv.config({path: './config/config.env'})
 
-
-connectDB()
+//this project has no database
+//mongoose not being used
+//connectDB()
 
 const app: Application = express()
 const PORT = process.env.PORT || 8080;
